@@ -21,7 +21,6 @@ export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTools = async () => {
@@ -30,11 +29,7 @@ export default function CatalogPage() {
           headers: { "X-Master-Key": API_KEY },
         });
         const data = await res.json();
-        const fetchedTools: Tool[] = data.record.tools || [];
-
-        // СОРТИРОВКА ПО ID (изменение №2)
-        const sorted = fetchedTools.sort((a, b) => a.id - b.id);
-        setTools(sorted);
+        setTools(data.record.tools || []);
       } catch (err) {
         console.error("Ошибка загрузки тулзов:", err);
       } finally {
@@ -71,10 +66,6 @@ export default function CatalogPage() {
     } finally {
       setDownloadingId(null);
     }
-  };
-
-  const toggleExpand = (id: number) => {
-    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const getCategoryLabel = (cat: string) => {
@@ -123,7 +114,12 @@ export default function CatalogPage() {
                 JOIN DISCORD
               </a>
 
-              {/* КНОПКА ADMIN УДАЛЕНА (изменение №3) */}
+              <Link
+                href="/admin"
+                className="px-4 py-1.5 text-sm font-mono tracking-wider rounded border border-white/10 text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
+              >
+                ADMIN
+              </Link>
             </div>
           </div>
         </div>
@@ -199,7 +195,6 @@ export default function CatalogPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((tool) => {
               const { label, color } = getCategoryLabel(tool.category);
-              const isExpanded = expandedId === tool.id;
 
               return (
                 <div
@@ -228,48 +223,16 @@ export default function CatalogPage() {
                     {label}
                   </span>
 
-                  {/* ОПИСАНИЕ (изменение №1 — свернуто по умолчанию с анимацией) */}
-                  <div className="mt-3">
-                    <button
-                      onClick={() => toggleExpand(tool.id)}
-                      className="flex items-center gap-2 text-[11px] font-mono tracking-wider text-white/30 hover:text-white/60 transition-colors mb-2"
-                    >
-                      <svg
-                        className={`w-3 h-3 transition-transform duration-300 ${
-                          isExpanded ? "rotate-90" : ""
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                      {isExpanded ? "СВЕРНУТЬ" : "ОПИСАНИЕ"}
-                    </button>
-
-                    <div
-                      className="overflow-hidden transition-all duration-500 ease-in-out"
-                      style={{
-                        maxHeight: isExpanded ? "300px" : "0px",
-                        opacity: isExpanded ? 1 : 0,
-                      }}
-                    >
-                      <p className="text-sm text-white/50 font-mono leading-relaxed">
-                        {tool.description}
-                      </p>
-                    </div>
-                  </div>
+                  {/* ОПИСАНИЕ */}
+                  <p className="text-sm text-white/50 font-mono leading-relaxed mb-5 min-h-[40px]">
+                    {tool.description}
+                  </p>
 
                   {/* СКАЧАТЬ */}
                   <button
                     onClick={() => handleDownload(tool)}
                     disabled={downloadingId === tool.id}
-                    className="mt-5 w-full py-2.5 rounded-lg text-sm font-mono tracking-widest bg-gradient-to-r from-purple-600/30 to-blue-600/30 border border-purple-500/30 text-white/80 hover:from-purple-600/50 hover:to-blue-600/50 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full py-2.5 rounded-lg text-sm font-mono tracking-widest bg-gradient-to-r from-purple-600/30 to-blue-600/30 border border-purple-500/30 text-white/80 hover:from-purple-600/50 hover:to-blue-600/50 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {downloadingId === tool.id
                       ? "СКАЧИВАНИЕ..."
