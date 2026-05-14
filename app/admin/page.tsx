@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const BIN_ID = "6a050660250b1311c348162d";
 const API_KEY = "$2a$10$oHU2FwqpVRMsaa22tSabt.3rDdfQjyTwnpbSF25DCpfeVG9.AuX8W";
-const ADMIN_PASSWORD = "entropy2026";
+const ADMIN_PASSWORD = "27Lba4456";
 
 interface Tool {
   id: number;
